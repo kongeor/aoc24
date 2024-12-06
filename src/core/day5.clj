@@ -47,7 +47,20 @@
      (map #(->> (str/split % #",")
                 (map parse-long)) (rest pages))]))
 
-(parse-input sample)
+(comment
+  (let [nums [97,13,75,29,47]
+        vars (repeatedly (count nums) lvar)
+        fvar (first vars)
+        var-pairs (partition 2 1 vars)
+        facts (make-facts (first (parse-input sample)))]
+    #_(clojure.pprint/pprint facts)
+    (pldb/with-db facts
+      (run 5 [q]
+        (== fvar (first nums))
+        (== q vars)
+        (everyg (fn [[x y]]
+                  (pages x y)) var-pairs)
+        ))))
 
 #_(pldb/db-rel pages p1 p2)
 (pldb/db-rel pages ^:index p1 ^:index p2)
@@ -57,14 +70,6 @@
             (pldb/db-fact db pages x y))
           (pldb/db)
           rules))
-
-(defn beforo [p1 p2]
-  (fresh [p]
-    (conde
-      [(pages p1 p2)]
-      [(pages p1 p)
-       (beforo p p2)]
-      )))
 
 (defne ntho
   [l n o]
@@ -79,32 +84,124 @@
     (ntho [1 2 3 4] 3 q)))
 
 (defn solve-line [facts nums]
-  (let [
-        ;nums [75, 47, 61, 53, 29]
-        ; nums [75 29 13]
-        middle-idx (long (/ (count nums) 2))
+  (let [middle-idx (long (/ (count nums) 2))
         vars (repeatedly (count nums) lvar)
         pairs (partition 2 1 vars)]
     (pldb/with-db facts
       (run 1 [q]
-        #_(== q vars)
         (ntho vars middle-idx q)
         (and* (map (fn [n v] (== n v)) nums vars))
         (everyg (fn [[x y]]
-                   (beforo x y)) pairs)
+                   (pages x y)) pairs)
         ))))
 
 (comment
   (time
-    (let [[rules pages] (parse-input (slurp (io/resource "input5.txt")))
+    (let [[rules pages] (parse-input #_sample (slurp (io/resource "input5.txt")))
           facts (make-facts rules)]
+      #_(def facts facts)
+      #_(def page-pairs pages)
       (->> pages
            (map #(let [solution (solve-line facts %)]
-                   (println "sol>" solution)
                    solution))
            (keep seq)
            (map first)
-           (reduce +)))))
+           (reduce +))))                                    ;; => 4872
+  )
+
+(defn solve-line-2 [facts nums]
+  (let [middle-idx (long (/ (count nums) 2))
+        vars (repeatedly (count nums) lvar)
+        pairs (partition 2 1 vars)]
+    (pldb/with-db facts
+      (run 10 [q]
+        #_(ntho vars middle-idx q)
+        (fresh [p]
+          #_(permuteo nums q)
+          (== q vars)
+          (everyg (fn [[x y]]
+                    (membero x nums)
+                    (membero y nums)
+                    (pages x y)) pairs))
+
+        ))))
+
+(comment
+  (let [[rules pages] (parse-input #_sample (slurp (io/resource "input5.txt")))
+        facts (make-facts rules)]
+    ;; lol, super slow
+    (solve-line-2 facts [100000, 33, 79, 45, 75, 95, 17, 51, 94, 36, 34, 25, 47, 24, 55, 16, 53, 86, 57, 85]))
+  )
+
+(comment
+  (time
+    (let [[rules pages] (parse-input #_sample (slurp (io/resource "input5.txt")))
+          facts (make-facts rules)]
+      #_(def facts facts)
+      #_(def page-pairs pages)
+      (println "count > " (count pages))
+      (->> #_pages [#_[33,24,16,31,47,21,73,36,57,86,94] [33,79,45,75,95,17,51,94,36,34,25,47,24,55,16,53,86,57,85]]
+           ;; as lazy as it gets
+           ;; bear with me, it's late
+           (map #(let [s1 (solve-line facts %)
+                       s2 nil #_(solve-line-2 facts %)]
+                   (println "*" s1)
+                   [s1 %]))
+           (filter (comp empty? first))
+           (map #(solve-line-2 facts (second %)))
+           #_(reduce +))))                                    ;; => 4872
+  )
+
+(defne incro
+  [l]
+  ([()]
+   s#)
+  ([[h]]
+   s#)
+  ([[f . t]]
+   (do
+     (println f)
+     s#)
+   (fresh [s]
+     (firsto t s)
+     (fd/+ f 1 s)
+     (incro t))))
+
+(comment
+  (run 2 [q]
+    (== [1 q] [1 3])
+    #_(incro q)))
+
+(comment
+  (let [nums [1 2 3 4 6]]
+    ;; with incro and 2 it hangs, why?
+    (run 2 [q]
+      (fresh [h h']
+        (firsto nums h)
+        (firsto q h')
+        (== h h')
+        (== q [1 2 3 4 6])
+        (permuteo nums q)))))
+
+(comment
+  (let [nums (nth page-pairs 2)]
+    (pldb/with-db facts
+      (run 5 [q]
+        (pages 75 q)))))
+
+(comment
+  (nth page-pairs 1))
+
+(comment
+  (let [nums (nth page-pairs 2)
+        index (get-in facts ["core.day5/pages_2" 0])
+        after (fn [n]
+                 (->> (get index n)
+                      (mapv second)
+                      set)
+                 )]
+    (after (first nums))
+    ))
 
 (comment
   (map (fn [[x y]]
@@ -113,3 +210,4 @@
 (comment
   (map (fn [x y]
          [x y]) (repeat 5 1) (range 10)))
+
