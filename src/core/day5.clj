@@ -133,6 +133,70 @@
     (solve-line-2 facts [100000, 33, 79, 45, 75, 95, 17, 51, 94, 36, 34, 25, 47, 24, 55, 16, 53, 86, 57, 85]))
   )
 
+(defn solvo-lino-2 [nums o]
+  (conde
+    [(fresh [x nums']
+       (conso x nums' nums)
+       (emptyo nums')
+       (== [x] o))]
+    [(fresh [x y nums' nums'' o']
+       (rembero x nums nums')
+       (rembero y nums' nums'')
+       (pages x y)
+       (solvo-lino-2 nums' o')
+       (conso x o' o))]))
+
+(comment
+  (let [[rules pages1] (parse-input sample #_(slurp (io/resource "input5.txt")))
+        facts (make-facts rules)]
+    #_(clojure.pprint/pprint rules)
+    (pldb/with-db facts
+      (run 5 [q]
+        (solvo-lino-2 [75, 97, 47, 61, 53] q)
+        #_(solvo-lino-2 [75 97 47] q)
+        ))))
+
+
+(defn solvolineooo-2 [l o]
+  (fresh [x l' y l'' o']
+    (rembero x l l')
+    (rembero y l' l'')
+    (pages x y)
+    (conso x o' o)
+    (conda
+      [(emptyo l'')
+       (== [x y] o)]
+      [(solvolineooo-2 l' o')])))
+
+(comment
+  (let [[rules pages1] (parse-input sample #_(slurp (io/resource "input5.txt")))
+        facts (make-facts rules)
+        l [75 97 47 61 53]]
+    (pldb/with-db facts
+      (run 5 [q]
+        (solvolineooo-2 l q)
+        ))))
+
+(comment
+  (run 2 [q]
+    (solvo-lino-2 [1 2] q)))
+
+(comment
+  (let [l [1]]
+    (run 2 [q]
+      (fresh [d]
+        (resto l d)
+        (emptyo d)))))
+
+(comment
+  (let [l [1 2 3 4]]
+    (run 20 [q]
+      (fresh [x l' y l'']
+        (rembero x l l')
+        (rembero y l' l'')
+        (== x 4)
+        (== [x y] q)))))
+
 (comment
   (time
     (let [[rules pages] (parse-input #_sample (slurp (io/resource "input5.txt")))
