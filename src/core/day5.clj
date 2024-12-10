@@ -275,3 +275,103 @@
   (map (fn [x y]
          [x y]) (repeat 5 1) (range 10)))
 
+;; sorting tools
+
+(defne inserto [l i ο]
+  ([() _ [i]])
+  ([[x . t] _ o]
+   (conde
+     [(fd/< x i)
+      (fresh [o']
+        (conso x o' o)
+        (inserto t i o'))]
+     [(fd/>= x i)
+      (fresh [o']
+        (conso i l o)
+        (inserto t i o'))])))
+
+(comment
+  (run 2 [q]
+    (inserto [2 3 5] 4 q)))
+
+(defne sorto [l o]
+  ([() ()])
+  ([[x . t] _]
+   (fresh [o']
+     ;; notice the order!
+     (sorto t o')
+     (inserto o' x o)
+     )))
+
+(comment
+  (run 2 [q]
+    (sorto [4 2 6 1 5] q)))
+
+
+(defne inserto2 [l i ο]
+  ([() _ [i]])
+  ([[x . t] _ o]
+   (conde
+     [
+      (pages x i)
+      (fresh [o']
+        (conso x o' o)
+        (inserto2 t i o'))]
+     [
+      (pages i x)
+      (fresh [o']
+        (conso i l o)
+        (inserto2 t i o'))])))
+
+(comment
+  (run 2 [q]
+    (inserto [2 3 5] 4 q)))
+
+(defne solvo-sorto2 [l o]
+  ([() ()])
+  ([[x . t] _]
+   (fresh [o']
+     ;; notice the order!
+     (solvo-sorto2 t o')
+     (inserto2 o' x o)
+     )))
+
+(defn solve-solvo-sorto2 [facts nums]
+  (println nums)
+  (let [middle-idx (long (/ (count nums) 2))]
+    (pldb/with-db facts
+      (run 1 [q]
+        (fresh [s]
+          (ntho s middle-idx q)
+          (solvo-sorto2 nums s))))))
+
+(comment
+  (let [[rules pages1] (parse-input #_sample (slurp (io/resource "input5.txt")))
+        facts (make-facts rules)]
+    #_(clojure.pprint/pprint rules)
+    (pldb/with-db facts
+      (run 5 [q]
+        (ntho vars middle-idx q)
+        (solvo-sorto2 [75, 97, 47, 61, 53] q)
+        #_(solvo-lino-2 [75 97 47] q)
+        ))))
+
+(comment
+  (time
+    (let [[rules pages1] (parse-input #_sample (slurp (io/resource "input5.txt")))
+          facts (make-facts rules)]
+      #_(def facts facts)
+      #_(def page-pairs pages)
+      (->> pages1
+           ;; as lazy as it gets
+           ;; bear with me, it's late
+           (map #(let [s1 (solve-line facts %)
+                       ;  s2 (solve-line-2 facts %)
+                       ]
+                   (println "*" s1)
+                   [s1 %]))
+           (filter (comp empty? first))
+           (map #(solve-solvo-sorto2 facts (second %)))
+           (map first)
+           (reduce +))))                                    ;; => 5564
+  )
