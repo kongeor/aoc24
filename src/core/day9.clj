@@ -167,3 +167,138 @@
         #_(== q q')
         )
       )))
+
+;; attempt 2
+
+(comment
+  (let [l (parse-line example)]
+    (run 2 [q]
+      (expando l 0 0 nil q)
+      )))
+
+(defne merglos [l1 l2 o]
+  ([_ () l2])
+  ([[h1 . t1] [h2 . t2] _]
+   (conde
+     [(numo h1)
+      (fresh [o']
+        (merglos t1 t2 o')
+        (conso h1 o' o))]
+     [(nilo h1)
+      (fresh [o']
+        (merglos t1 t2 o')
+        (conso h2 o' o))])))
+
+(comment
+  (run 2 [q]
+    #_(merglos [] [] q)
+    (merglos [0 0 nil nil 1 1 nil]
+             [nil nil 10 11 nil nil 12]
+             q)))
+
+(comment
+  (let [a '(0   0   nil nil nil 1   1   1   nil nil nil 2   nil nil nil 3 3 3 nil 4 4 nil 5 5 5 5 nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil)
+        b '(nil nil 9   9   8   nil nil nil 8   8   8   nil nil 7 7 7 nil nil nil nil 6 nil nil 6 nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil)]
+    (run 2 [q]
+      (merglos a b q))))
+
+(defn calc1o [l i j o n]
+  (conde
+    [(fd/<= j i)
+     (== o [])
+     (== n i)]
+    [(fd/> j i)
+     (fresh [a b o']
+       (ntho l i a)
+       (ntho l j b)
+       (conde
+         [(numo a)
+          (numo b)
+          (fresh [i']
+            (fd/+ i 1 i')
+            (conso nil o' o)
+            (calc1o l i' j o' n))]
+         [(numo a)                                          ;; todo dup
+          (nilo b)
+          (fresh [i']
+            (fd/+ i 1 i')
+            (conso nil o' o)
+            (calc1o l i' j o' n))]
+         [(nilo a)
+          (numo b)
+          (fresh [i' j']
+            (fd/+ i 1 i')
+            (fd/- j 1 j')
+            (conso b o' o)
+            (calc1o l i' j' o' n))]
+         [(nilo a)
+          (nilo b)
+          (fresh [j']
+            (fd/- j 1 j')
+            #_(conso b o' o)                                ;; funky bug!
+            (calc1o l i j' o n))]))]))
+
+(defne takeo [l n o]
+  ([_ 0 ()])
+  ([[h . t] _ _]
+   (fresh [n' o']
+     (fd/+ n' 1 n)
+     (conso h o' o)
+     (takeo t n' o'))))
+
+(comment
+  (run 2 [q]
+    (takeo [1 2 3 4] 2 q)))
+
+(defne checksumo                                            ;; the famous warrior!
+  [l i o]
+  ([() _ 0])
+  ([[h . t] _ _ ]
+   (fresh [i' s o']
+     (fd/+ i 1 i')
+     #_(fd/dom s (fd/interval 0 100000000000))
+     (fd/* i h s)
+     (checksumo t i' o')
+     (fd/+ s o' o))))
+
+(comment
+  (run 2 [q]
+    (checksumo [1 0 2 3 2  4 4 43 2 2] 0 q)))
+
+
+(comment
+  (let [
+        ; input (parse-line example)
+        input (parse-line (slurp (io/resource "input9.txt")))
+
+        ; input [0 0 nil nil nil 1 1 1 nil nil nil 2 nil nil nil 3 3 3 nil 4 4 nil 5 5 5 5 nil 6 6 6 6 nil 7 7 7 nil 8 8 8 8 9 9]
+        ; j (dec (count input))
+        ]
+    (run 2 [q ]
+      (fresh [x z j j' z z' z'' q' q'' q''' q'''' q''''' n n']
+        (expando input 0 0 nil x)
+        (counto x j')
+        (fd/+ j 1 j')                                       ;; it's inverse but all right
+        (calc1o x 0 j q' n)
+        (fd/+ n n' j)
+        (takeo x n z)
+        (repeato nil n' z')
+        (appendo z z' z'')
+        (takeo q' n q'')
+        (repeato nil n' q''')
+        (appendo q'' q''' q'''')
+        #_(== q'''' q)
+        #_(== q n )
+        #_(== q' q)
+        #_(merglos z'' q'''' q''''')
+        (merglos z'' q'''' q)
+
+        ;; why this complaints about the domain?
+        #_(checksumo q''''' 0 q)
+
+        #_(calc1o input 0 j q n)))))
+
+#_(count '(0 0 nil nil nil 1 1 1 nil nil nil 2 nil nil nil 3 3 3 nil 4 4 nil 5 5 5 5 nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil))
+
+
+#_(count '(nil nil 9 9 8 nil nil nil 8 8 8 nil nil 7 7 7 nil nil nil nil 6 nil nil 6 nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil))
