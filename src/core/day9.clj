@@ -54,14 +54,12 @@
 (defn numo [n]
   (conda
     [(nilo n) u#]
-    [s# (fd/in n (fd/interval 0 10))]))
+    [(fd/in n (fd/interval 0 10))]))
 
 (comment
   (run 11 [q]
     (fresh [a]
-      (== q nil)
-      (== a q)
-      (numo a))))
+      (numo 1))))
 
 ;; copy-pasto from day 5
 (defne ntho
@@ -71,6 +69,10 @@
    (fresh [n']
      (fd/+ n' 1 n)
      (ntho t n' o))))
+
+(comment
+  (run 3 [q]
+    (ntho q 3 3)))
 
 (defne splito [l i a x b]
   ([[h . t] 0 () h t])
@@ -83,11 +85,11 @@
 
 (comment
   (run 2 [a x b]
-    (splito [1 2 3 4] 0 a x b)))
+    (splito [1 2 3 4 :4 5 6] x a :4 b)))
 
 (comment
-  (run 2 [a x b]
-    (splito [1 2 3 4 5] 2 a x b))
+  (run 10 [x]
+    (splito x 2 [1 2] 3 [4 5 6 7]))
   )
 
 (defn swapo [l i j o]
@@ -179,21 +181,19 @@
 (defne merglos [l1 l2 o]
   ([_ () l2])
   ([[h1 . t1] [h2 . t2] _]
-   (conde
-     [(numo h1)
-      (fresh [o']
-        (merglos t1 t2 o')
-        (conso h1 o' o))]
-     [(nilo h1)
-      (fresh [o']
-        (merglos t1 t2 o')
-        (conso h2 o' o))])))
+   (fresh [o']
+     (merglos t1 t2 o')
+     (conde
+       [(numo h1)
+        (conso h1 o' o)]
+       [(nilo h1)
+        (conso h2 o' o)]))))
 
 (comment
   (run 2 [q]
     #_(merglos [] [] q)
-    (merglos [0 0 nil nil 1 1 nil]
-             [nil nil 10 11 nil nil 12]
+    (merglos [0   0   nil nil 1   1   nil]
+             [nil nil 10  11  nil nil 12]
              q)))
 
 (comment
@@ -267,9 +267,12 @@
 
 
 (comment
+  (count (butlast (parse-line (slurp (io/resource "input9.txt"))))))
+
+(comment
   (let [
         ; input (parse-line example)
-        input (parse-line (slurp (io/resource "input9.txt")))
+        input (butlast (parse-line (slurp (io/resource "input9.txt"))))
 
         ; input [0 0 nil nil nil 1 1 1 nil nil nil 2 nil nil nil 3 3 3 nil 4 4 nil 5 5 5 5 nil 6 6 6 6 nil 7 7 7 nil 8 8 8 8 9 9]
         ; j (dec (count input))
@@ -302,3 +305,88 @@
 
 
 #_(count '(nil nil 9 9 8 nil nil nil 8 8 8 nil nil 7 7 7 nil nil nil nil 6 nil nil 6 nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil))
+
+;; attempt 3
+
+(defn calc1oo [l i j n o]
+  (conde
+    [(fd/<= j i)
+     (fd/== i n)
+     (== o [])]
+    [(fd/<= j i)
+     (fd/!= i n)
+     (fresh [o' i']
+       (fd/+ i 1 i')
+       (conso nil o' o)
+       (calc1oo l i' j n o'))]
+    [(fd/> j i)
+     (fresh [a b o']
+       (ntho l i a)
+       (ntho l j b)
+       (conde
+         [(numo a)
+          (fresh [i']
+            (fd/+ i 1 i')
+            (conso a o' o)
+            (calc1oo l i' j n o'))]
+         [(nilo a)
+          (numo b)
+          (fresh [i' j']
+            (fd/+ i 1 i')
+            (fd/- j 1 j')
+            (conso b o' o)
+            (calc1oo l i' j' n o'))]
+         [(nilo a)
+          (nilo b)
+          (fresh [j']
+            (fd/- j 1 j')
+            #_(conso b o' o)                                ;; funky bug!
+            (calc1oo l i j' n o))]))]))
+
+(comment
+  (let [
+        ; input (parse-line example)
+        ; n (dec (count input))
+        input (butlast (parse-line (slurp (io/resource "input9.txt"))))
+
+        ; input [0 0 nil nil nil 1 1 1 nil nil nil 2 nil nil nil 3 3 3 nil 4 4 nil 5 5 5 5 nil 6 6 6 6 nil 7 7 7 nil 8 8 8 8 9 9]
+        ; j (dec (count input))
+        ]
+    (println input)
+    (run 2 [q]
+      (fresh [j x x' j']
+        (expando input 0 0 nil q)
+        #_(counto x j)
+        #_(fd/+ j' 1 j)                                     ;; it's inverse but all right
+        #_(calc1oo x 0 j' j' x')
+        #_(== q x')
+        #_(checksumo x' 0 q)
+
+        #_(counto x q)
+        )
+      )))
+
+(comment
+  (run 10 [a b]
+    (appendo a b [1 2 3 4])))
+
+(defne identityo [l o]
+  ([() ()])
+  ([[h . t] _]
+   (fresh [t']
+     (conso h t' o)
+     #_(== t' t)
+     (identityo t' t)
+     )))
+
+(comment
+  (reduce +
+          (butlast (parse-line (slurp (io/resource "input9.txt"))))))
+
+(comment
+  (time
+    (let [input
+          (butlast (parse-line (slurp (io/resource "input9.txt"))))]
+      (run 2 [q]
+        (ntho input 19998 q)
+        #_(identityo input q)))))
