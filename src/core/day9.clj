@@ -379,6 +379,15 @@
      (identityo t' t)
      )))
 
+(defn identity2o [l o]
+  (conde
+    [(== l [])
+     (== o [])]
+    [(fresh [a d o']
+       (conso a d l)
+       (conso a o' o)
+       (identity2o d o'))]))
+
 (comment
   (reduce +
           (butlast (parse-line (slurp (io/resource "input9.txt"))))))
@@ -387,6 +396,8 @@
   (time
     (let [input
           (butlast (parse-line (slurp (io/resource "input9.txt"))))]
-      (run 2 [q]
-        (ntho input 19998 q)
-        #_(identityo input q)))))
+      (doall
+        (run 2 [q]
+          #_(ntho input 19998 q)
+          #_(identity2o input q)
+          (identityo input q))))))
