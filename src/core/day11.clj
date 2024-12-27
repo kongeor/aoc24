@@ -133,9 +133,25 @@
     (count (part1 [125 17] 20))))
 
 (defn parse-input [input]
-  (keep parse-long (str/split input #" ")))
+  ;; use \s+ instead of ' ' to avoid \n issues
+  (keep parse-long (str/split input #"\s+")))
 
 (comment
   (let [nums (parse-input (slurp (io/resource "input11.txt")))]
     (time
       (count (part1 nums 20)))))
+
+;; work one element at a time for maximum speed!
+(comment
+  ;; "Elapsed time: 984279.902817 msecs"
+  ;; => 182721
+  ;; there ^ is one forgotten element from my puzzle input there
+  ;; "Elapsed time: 24799.471129 msecs"
+  ;; => 11836
+  ;; (+ 11836 182721)
+  ; => 194557 \o/
+  (let [nums (parse-input (slurp (io/resource "input11.txt")))]
+    (time
+      (reduce + (map #(do
+                        (println "working on" %)
+                        (count (part1 [%] 25))) [85629] #_nums)))))
